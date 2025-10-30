@@ -1,9 +1,8 @@
 import Product from "../models/Product.js";
 import mongoose from "mongoose";
-import catchAsync from "../utils/catchAsync.js";
 import fs from "fs";
 
-export const createProduct = catchAsync(async (req, res) => {
+export const createProduct = async (req, res) => {
     const imagePaths = req.files ? req.files.map((f) => f.filename) : [];
 
     const product = await Product.create({
@@ -12,9 +11,9 @@ export const createProduct = catchAsync(async (req, res) => {
     });
 
     res.status(201).json({ success: true, data: product });
-});
+};
 
-export const getProducts = catchAsync(async (req, res) => {
+export const getProducts = async (req, res) => {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Number(req.query.limit) || 50);
     const skip = (page - 1) * limit;
@@ -104,10 +103,10 @@ export const getProducts = catchAsync(async (req, res) => {
         currentPage: page,
         data: products,
     });
-});
+};
 
 
-export const updateProduct = catchAsync(async (req, res) => {
+export const updateProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -124,10 +123,10 @@ export const updateProduct = catchAsync(async (req, res) => {
     await product.save();
 
     res.status(200).json({ success: true, data: product });
-});
+};
 
 // Delete product and local images
-export const deleteProduct = catchAsync(async (req, res) => {
+export const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
@@ -139,4 +138,4 @@ export const deleteProduct = catchAsync(async (req, res) => {
     await product.deleteOne();
 
     res.status(200).json({ success: true, message: "Product deleted" });
-});
+};

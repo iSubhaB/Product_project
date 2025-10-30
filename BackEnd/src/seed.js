@@ -4,6 +4,7 @@ import Category from "./models/Category.js";
 import SubCategory from "./models/SubCategory.js";
 import Product from "./models/Product.js";
 import connectDB from "./config/db.js";
+import uploads from "../uploads"
 
 dotenv.config();
 
@@ -115,7 +116,7 @@ const seedData = async () => {
                     stock: Math.floor(Math.random() * 100) + 1,
                     category: sub.category,
                     subCategory: sub._id,
-                    images: ["sample1.jpg", "sample2.jpg", "sample3.jpg"],
+                    images: [ "../uploads/images (1).jfif" , "../uploads/images (2).jfif", "../uploads/images (3).jfif"],
                 });
             }
         }
