@@ -9,7 +9,7 @@ import upload from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-// Multiple file upload for product images
+
 router
     .route("/")
     .post(upload.array("images", 5), createProduct) // upload up to 5 images

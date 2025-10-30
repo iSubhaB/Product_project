@@ -35,7 +35,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subCategoryRoutes);
 
 
-app.get("/", (req, res) => res.send("API running ✅"));
+app.get("/", (req, res) => res.send("API running "));
 
 
 app.use(errorHandler);

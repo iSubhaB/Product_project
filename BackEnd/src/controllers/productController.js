@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import catchAsync from "../utils/catchAsync.js";
 import fs from "fs";
 
-// Create new product
 export const createProduct = catchAsync(async (req, res) => {
     const imagePaths = req.files ? req.files.map((f) => f.filename) : [];
 
@@ -29,31 +28,26 @@ export const getProducts = catchAsync(async (req, res) => {
 
     const andConditions = [];
 
-    // 🔹 Search by name or description
     if (searchRegex) {
         andConditions.push({
             $or: [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }],
         });
     }
 
-    // 🔹 Category filter (if provided)
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
         andConditions.push({ category: new mongoose.Types.ObjectId(categoryId) });
     }
 
-    // 🔹 Subcategory filter (if provided)
     if (subCategoryId && mongoose.Types.ObjectId.isValid(subCategoryId)) {
         andConditions.push({ subCategory: new mongoose.Types.ObjectId(subCategoryId) });
     }
 
-    // ✅ Match first for efficiency
     const matchStage = andConditions.length > 0 ? { $match: { $and: andConditions } } : {};
 
     const pipeline = [];
 
     if (Object.keys(matchStage).length > 0) pipeline.push(matchStage);
 
-    // ✅ Lookup category and subcategory
     pipeline.push(
         {
             $lookup: {
@@ -113,7 +107,6 @@ export const getProducts = catchAsync(async (req, res) => {
 });
 
 
-// Update product + replace images if uploaded
 export const updateProduct = catchAsync(async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });

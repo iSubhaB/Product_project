@@ -64,10 +64,10 @@ const nouns = [
     "Speaker",
 ];
 
-// helper randoms
+
 const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randomPrice = () => Math.floor(Math.random() * 9000) + 100;
-const randomRating = () => (Math.random() * 4 + 1).toFixed(1); // 1.0–5.0
+const randomRating = () => (Math.random() * 4 + 1).toFixed(1); 
 
 const seedData = async () => {
     try {
@@ -122,14 +122,14 @@ const seedData = async () => {
 
         await Product.insertMany(products);
 
-        console.log("✅ Seeding completed successfully!");
-        console.log(`📦 Categories: ${categories.length}`);
-        console.log(`📂 Subcategories: ${createdSubs.length}`);
-        console.log(`🛒 Products: ${products.length}`);
+        console.log(" Seeding completed successfully!");
+        console.log(` Categories: ${categories.length}`);
+        console.log(` Subcategories: ${createdSubs.length}`);
+        console.log(` Products: ${products.length}`);
 
         process.exit(0);
     } catch (err) {
-        console.error("❌ Seed error:", err);
+        console.error(" Seed error:", err);
         process.exit(1);
     }
 };
