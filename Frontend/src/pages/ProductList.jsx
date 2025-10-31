@@ -43,8 +43,7 @@ const ProductList = () => {
         fetchProducts();
     }, [debouncedSearch, page, categoryId, subCategoryId]);
 
-
-  
+    //  Updated Columns (Image removed, Description added)
     const columns = [
         {
             name: "#",
@@ -52,23 +51,14 @@ const ProductList = () => {
             width: "70px",
         },
         {
-            name: "Image",
-            cell: (row) =>
-                row.images?.length > 0 ? (
-                    <img
-                        src={`${import.meta.env.VITE_API_URL}/uploads/${row.images[0]}`}
-                        alt={row.name}
-                        className="w-14 h-14 object-cover rounded"
-                    />
-                ) : (
-                    <span className="text-gray-400 text-sm">No Image</span>
-                ),
-            width: "100px",
-        },
-        {
             name: "Product Name",
             selector: (row) => row.name,
             sortable: true,
+        },
+        {
+            name: "Description",
+            selector: (row) => row.description || "-",
+            wrap: true, // allows text to show in multiple lines
         },
         {
             name: "Category",
@@ -88,6 +78,7 @@ const ProductList = () => {
 
     return (
         <div className="p-5 space-y-4">
+            
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4">
                 <input
@@ -124,7 +115,7 @@ const ProductList = () => {
                 Showing page {page} of {totalPages} — {totalCount} products
             </p>
 
-            {/*  React Data Table */}
+            {/* Data Table */}
             <DataTable
                 columns={columns}
                 data={products}
@@ -138,8 +129,6 @@ const ProductList = () => {
                 onChangePage={(newPage) => setPage(newPage)}
             />
 
-            {/* Your existing bottom pagination if you still want it */}
-            {/* <Pagination page={page} totalPages={totalPages} onPageChange={setPage} /> */}
         </div>
     );
 };

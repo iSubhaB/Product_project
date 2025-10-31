@@ -15,7 +15,7 @@ export default function SubCategoryFilter({ categoryId, onSelect, selected }) {
                 const res = await api.get(`/subcategories?categoryId=${categoryId}`);
                 setSubCategories(res.data?.data || []);
             } catch (err) {
-                console.error("❌ Error fetching subcategories:", err);
+                console.error(" Error fetching subcategories:", err);
                 setSubCategories([]);
             }
         };
