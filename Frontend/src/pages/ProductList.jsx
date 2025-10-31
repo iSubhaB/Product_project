@@ -124,7 +124,7 @@ const ProductList = () => {
                 paginationServer
                 paginationTotalRows={totalCount}
                 paginationPerPage={limit}
-                paginationRowsPerPageOptions={[10, 25, 50, 100]} 
+                paginationRowsPerPageOptions={[10, 25, 50]} 
                 onChangePage={(newPage) => setPage(newPage)}
                 onChangeRowsPerPage={(newLimit, newPage) => {
                     setLimit(newLimit); 
