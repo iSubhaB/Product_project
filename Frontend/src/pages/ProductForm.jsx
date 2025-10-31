@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import api from "../services/api";
 
 export default function ProductForm({ editProduct }) {
+    //editProduct == this is a props for optional edit product
     const [form, setForm] = useState({ name: "", description: "", price: "", category: "", subCategory: "" });
     const [images, setImages] = useState([]);
     const [preview, setPreview] = useState([]);
 
     const handleFiles = (e) => {
-        const files = Array.from(e.target.files);
+        const files = Array.from(e.target.files);  // if we upload file will store to files
         setImages(files);
         setPreview(files.map(file => URL.createObjectURL(file)));
     };
@@ -15,11 +16,11 @@ export default function ProductForm({ editProduct }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
-        Object.entries(form).forEach(([k, v]) => data.append(k, v));
+        Object.entries(form).forEach(([k, v]) => data.append(k, v)); //converts an object into an array of key-value pairs.
         images.forEach(file => data.append("images", file));
         await api.post("/products", data, { headers: { "Content-Type": "multipart/form-data" } });
         // clean up previews
-        preview.forEach(url => URL.revokeObjectURL(url));
+        preview.forEach(url => URL.revokeObjectURL(url));//Removes temporary preview URLs to free memory
         alert("Created");
     };
 

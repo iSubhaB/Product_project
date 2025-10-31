@@ -4,12 +4,10 @@ import fs from "fs";
 
 export const createProduct = async (req, res) => {
     const imagePaths = req.files ? req.files.map((f) => f.filename) : [];
-
-    const product = await Product.create({
+    const product = await Product.create({  //Insert new product into MongoDB
         ...req.body,
         images: imagePaths,
     });
-
     res.status(201).json({ success: true, data: product });
 };
 
@@ -23,7 +21,7 @@ export const getProducts = async (req, res) => {
 
     const searchRegex = search
         ? new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-        : null;
+        : null;  //ensures special characters don’t break the regex.
 
     const andConditions = [];
 
@@ -42,10 +40,14 @@ export const getProducts = async (req, res) => {
     }
 
     const matchStage = andConditions.length > 0 ? { $match: { $and: andConditions } } : {};
+   // push the all input data to matchStage by checking the andCondition emty or not
+   //  If there are filters → Add $match to pipeline
+   // If there are no filters → Skip $match completely
 
     const pipeline = [];
 
     if (Object.keys(matchStage).length > 0) pipeline.push(matchStage);
+   // we got the data and push to pipeline for 
 
     pipeline.push(
         {
@@ -56,7 +58,7 @@ export const getProducts = async (req, res) => {
                 as: "category",
             },
         },
-        { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },// this is to convert the category array into a single object.  //If product has no category, do not remove the product.
         {
             $lookup: {
                 from: "subcategories",
@@ -92,9 +94,10 @@ export const getProducts = async (req, res) => {
         }
     );
 
-    const result = await Product.aggregate(pipeline).allowDiskUse(true);
+    const result = await Product.aggregate(pipeline);
     const metadata = result[0]?.metadata[0] || { total: 0 };
-    const products = result[0]?.data || [];
+    const products = result[0]?.data || [];  
+    //result[0]?.data==Give the first (and only) object returned by the aggregation.
 
     res.status(200).json({
         success: true,
@@ -104,6 +107,8 @@ export const getProducts = async (req, res) => {
         data: products,
     });
 };
+
+//metadata.total=how many products match filters/search in total, not just this page.
 
 
 export const updateProduct = async (req, res) => {

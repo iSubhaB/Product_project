@@ -16,7 +16,7 @@ const ProductList = () => {
     const [loading, setLoading] = useState(false);
 
     const debouncedSearch = useDebounce(search, 500);
-    const ITEMS_PER_PAGE = 50; // 
+    const ITEMS_PER_PAGE = 50;
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -80,12 +80,13 @@ const ProductList = () => {
                 Showing page {page} of {totalPages} — {totalCount} products
             </p>
 
-       
+            {/* Table */}
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse border text-left">
                     <thead className="bg-gray-100">
                         <tr>
                             <th className="border p-3">#</th>
+                            <th className="border p-3">Image</th> 
                             <th className="border p-3">Product Name</th>
                             <th className="border p-3">Category</th>
                             <th className="border p-3">Sub Category</th>
@@ -96,13 +97,13 @@ const ProductList = () => {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="5" className="text-center p-5 text-gray-500">
+                                <td colSpan="6" className="text-center p-5 text-gray-500">
                                     Loading...
                                 </td>
                             </tr>
                         ) : products.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="text-center p-5 text-gray-500">
+                                <td colSpan="6" className="text-center p-5 text-gray-500">
                                     No Products Found
                                 </td>
                             </tr>
@@ -112,6 +113,20 @@ const ProductList = () => {
                                     <td className="border p-3">
                                         {(page - 1) * ITEMS_PER_PAGE + index + 1}
                                     </td>
+
+                                    {/* ✅ Show image */}
+                                    <td className="border p-3">
+                                        {p.images?.length > 0 ? (
+                                            <img
+                                                src={`${import.meta.env.VITE_API_URL}/uploads/${p.images[0]}`}
+                                                alt={p.name}
+                                                className="w-14 h-14 object-cover rounded"
+                                            />
+                                        ) : (
+                                            <span className="text-gray-400 text-sm">No Image</span>
+                                        )}
+                                    </td>
+
                                     <td className="border p-3">{p.name}</td>
                                     <td className="border p-3">{p.category?.name || "-"}</td>
                                     <td className="border p-3">{p.subCategory?.name || "-"}</td>
@@ -123,7 +138,6 @@ const ProductList = () => {
                 </table>
             </div>
 
-       
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
     );
