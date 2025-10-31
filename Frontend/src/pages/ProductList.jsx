@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DataTable from "react-data-table-component";
 import api from "../services/api";
 import useDebounce from "../hooks/useDebounce";
 import Pagination from "../components/Pagination";
@@ -42,6 +43,49 @@ const ProductList = () => {
         fetchProducts();
     }, [debouncedSearch, page, categoryId, subCategoryId]);
 
+
+    // ✅ Define Table Columns
+    const columns = [
+        {
+            name: "#",
+            selector: (row, index) => (page - 1) * ITEMS_PER_PAGE + index + 1,
+            width: "70px",
+        },
+        {
+            name: "Image",
+            cell: (row) =>
+                row.images?.length > 0 ? (
+                    <img
+                        src={`${import.meta.env.VITE_API_URL}/uploads/${row.images[0]}`}
+                        alt={row.name}
+                        className="w-14 h-14 object-cover rounded"
+                    />
+                ) : (
+                    <span className="text-gray-400 text-sm">No Image</span>
+                ),
+            width: "100px",
+        },
+        {
+            name: "Product Name",
+            selector: (row) => row.name,
+            sortable: true,
+        },
+        {
+            name: "Category",
+            selector: (row) => row.category?.name || "-",
+            sortable: true,
+        },
+        {
+            name: "Sub Category",
+            selector: (row) => row.subCategory?.name || "-",
+            sortable: true,
+        },
+        {
+            name: "Price",
+            selector: (row) => `₹ ${row.price}`,
+        },
+    ];
+
     return (
         <div className="p-5 space-y-4">
             {/* Filters */}
@@ -80,65 +124,22 @@ const ProductList = () => {
                 Showing page {page} of {totalPages} — {totalCount} products
             </p>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse border text-left">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="border p-3">#</th>
-                            <th className="border p-3">Image</th> 
-                            <th className="border p-3">Product Name</th>
-                            <th className="border p-3">Category</th>
-                            <th className="border p-3">Sub Category</th>
-                            <th className="border p-3">Price</th>
-                        </tr>
-                    </thead>
+            {/* ✅ React Data Table */}
+            <DataTable
+                columns={columns}
+                data={products}
+                highlightOnHover
+                striped
+                progressPending={loading}
+                pagination
+                paginationServer
+                paginationTotalRows={totalCount}
+                paginationPerPage={ITEMS_PER_PAGE}
+                onChangePage={(newPage) => setPage(newPage)}
+            />
 
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan="6" className="text-center p-5 text-gray-500">
-                                    Loading...
-                                </td>
-                            </tr>
-                        ) : products.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" className="text-center p-5 text-gray-500">
-                                    No Products Found
-                                </td>
-                            </tr>
-                        ) : (
-                            products.map((p, index) => (
-                                <tr key={p._id} className="hover:bg-gray-50">
-                                    <td className="border p-3">
-                                        {(page - 1) * ITEMS_PER_PAGE + index + 1}
-                                    </td>
-
-                                    {/* ✅ Show image */}
-                                    <td className="border p-3">
-                                        {p.images?.length > 0 ? (
-                                            <img
-                                                src={`${import.meta.env.VITE_API_URL}/uploads/${p.images[0]}`}
-                                                alt={p.name}
-                                                className="w-14 h-14 object-cover rounded"
-                                            />
-                                        ) : (
-                                            <span className="text-gray-400 text-sm">No Image</span>
-                                        )}
-                                    </td>
-
-                                    <td className="border p-3">{p.name}</td>
-                                    <td className="border p-3">{p.category?.name || "-"}</td>
-                                    <td className="border p-3">{p.subCategory?.name || "-"}</td>
-                                    <td className="border p-3">₹ {p.price}</td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            {/* Your existing bottom pagination if you still want it */}
+            {/* <Pagination page={page} totalPages={totalPages} onPageChange={setPage} /> */}
         </div>
     );
 };
