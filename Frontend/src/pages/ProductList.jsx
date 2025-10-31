@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import api from "../services/api";
 import useDebounce from "../hooks/useDebounce";
-import Pagination from "../components/Pagination";
 import CategoryFilter from "../components/CategoryFilter";
 import SubCategoryFilter from "../components/SubCategoryFilter";
 
@@ -10,6 +9,7 @@ const ProductList = () => {
     const [products, setProducts] = useState([]);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(50);  
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [categoryId, setCategoryId] = useState("");
@@ -17,14 +17,13 @@ const ProductList = () => {
     const [loading, setLoading] = useState(false);
 
     const debouncedSearch = useDebounce(search, 500);
-    const ITEMS_PER_PAGE = 50;
 
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
                 const { data } = await api.get(
-                    `/products?page=${page}&limit=${ITEMS_PER_PAGE}&search=${debouncedSearch}` +
+                    `/products?page=${page}&limit=${limit}&search=${debouncedSearch}` +
                     (categoryId ? `&categoryId=${categoryId}` : "") +
                     (subCategoryId ? `&subCategoryId=${subCategoryId}` : "")
                 );
@@ -41,13 +40,12 @@ const ProductList = () => {
         };
 
         fetchProducts();
-    }, [debouncedSearch, page, categoryId, subCategoryId]);
+    }, [debouncedSearch, page, limit, categoryId, subCategoryId]);
 
-    //  Updated Columns (Image removed, Description added)
     const columns = [
         {
             name: "#",
-            selector: (row, index) => (page - 1) * ITEMS_PER_PAGE + index + 1,
+            selector: (row, index) => (page - 1) * limit + index + 1,
             width: "70px",
         },
         {
@@ -58,7 +56,7 @@ const ProductList = () => {
         {
             name: "Description",
             selector: (row) => row.description || "-",
-            wrap: true, // allows text to show in multiple lines
+            wrap: true,
         },
         {
             name: "Category",
@@ -78,7 +76,7 @@ const ProductList = () => {
 
     return (
         <div className="p-5 space-y-4">
-            
+
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4">
                 <input
@@ -115,7 +113,7 @@ const ProductList = () => {
                 Showing page {page} of {totalPages} — {totalCount} products
             </p>
 
-            {/* Data Table */}
+            {/*  Data Table */}
             <DataTable
                 columns={columns}
                 data={products}
@@ -125,10 +123,14 @@ const ProductList = () => {
                 pagination
                 paginationServer
                 paginationTotalRows={totalCount}
-                paginationPerPage={ITEMS_PER_PAGE}
+                paginationPerPage={limit}
+                paginationRowsPerPageOptions={[10, 25, 50, 100]} 
                 onChangePage={(newPage) => setPage(newPage)}
+                onChangeRowsPerPage={(newLimit, newPage) => {
+                    setLimit(newLimit); 
+                    setPage(newPage);  
+                }}
             />
-
         </div>
     );
 };
