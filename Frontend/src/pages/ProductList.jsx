@@ -44,7 +44,7 @@ const ProductList = () => {
     }, [debouncedSearch, page, categoryId, subCategoryId]);
 
 
-    // ✅ Define Table Columns
+  
     const columns = [
         {
             name: "#",
@@ -124,7 +124,7 @@ const ProductList = () => {
                 Showing page {page} of {totalPages} — {totalCount} products
             </p>
 
-            {/* ✅ React Data Table */}
+            {/*  React Data Table */}
             <DataTable
                 columns={columns}
                 data={products}
