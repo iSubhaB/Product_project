@@ -1,15 +1,57 @@
 import Product from "../models/Product.js";
+import Category from "../models/Category.js";
+import SubCategory from "../models/SubCategory.js"; //  FIXED: Correct import name
 import mongoose from "mongoose";
 import fs from "fs";
 
 export const createProduct = async (req, res) => {
+  try {
+    const { name, description, price, categoryName, subCategoryName } = req.body;
     const imagePaths = req.files ? req.files.map((f) => f.filename) : [];
-    const product = await Product.create({  //Insert new product into MongoDB
-        ...req.body,
-        images: imagePaths,
+
+    // Check if category already exists, if not — create it
+    let category = await Category.findOne({ name: categoryName });
+    if (!category) {
+      category = await Category.create({ name: categoryName });
+    }
+
+    // Check if subcategory exists (under this category), if not — create it
+    let subCategory = await SubCategory.findOne({
+      name: subCategoryName,
+      category: category._id,
     });
-    res.status(201).json({ success: true, data: product });
+
+    if (!subCategory) {
+      subCategory = await SubCategory.create({
+        name: subCategoryName,
+        category: category._id,
+      });
+    }
+
+    //  Create the Product and link Category + SubCategory
+    const product = await Product.create({
+      name,
+      description,
+      price,
+      images: imagePaths,
+      category: category._id,
+      subCategory: subCategory._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to create product",
+      error: error.message,
+    });
+  }
 };
+
 
 export const getProducts = async (req, res) => {
     const page = Math.max(1, Number(req.query.page) || 1);

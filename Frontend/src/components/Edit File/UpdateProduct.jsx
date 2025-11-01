@@ -24,11 +24,11 @@ const UpdateProduct = ({ data, onClose }) => {
 
     try {
       await api.put(`/products/${data._id}`, formData);
-      alert("✅ Product updated successfully!");
+      alert(" Product updated successfully!");
       if (onClose) onClose();
     } catch (err) {
       console.error(err);
-      setError("❌ Failed to update product.");
+      setError(" Failed to update product.");
     } finally {
       setSaving(false);
     }

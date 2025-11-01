@@ -11,7 +11,7 @@ export default function CategoryFilter({ onSelect, selected }) {
                 const res = await api.get("/categories");
                 setCategories(res.data?.data || []);
             } catch (err) {
-                console.error("❌ Error fetching categories:", err);
+                console.error(" Error fetching categories:", err);
             }
         };
         fetchCategories();

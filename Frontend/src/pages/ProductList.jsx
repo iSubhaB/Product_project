@@ -232,7 +232,7 @@ const ProductList = () => {
       {/* EDIT MODAL */}
       {selectedProduct && (
         <UpdateProduct
-          data={selectedProduct}  // ✅ Correct prop
+          data={selectedProduct}  //  Correct prop
           onClose={handleCloseUpdate}
         />
       )}
