@@ -19,6 +19,9 @@ const ProductList = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isInsert, setIsInsert] = useState(false);
 
+  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
+  const [hoverCart, setHoverCart] = useState(false);
+
   const debouncedSearch = useDebounce(search, 500);
 
   const fetchProducts = async () => {
@@ -44,6 +47,17 @@ const ProductList = () => {
     fetchProducts();
   }, [debouncedSearch, page, limit, categoryId, subCategoryId]);
 
+  // Track cursor position
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (hoverCart) {
+        setCursorPos({ x: e.clientX, y: e.clientY });
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [hoverCart]);
+
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
@@ -63,6 +77,25 @@ const ProductList = () => {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-white to-gray-100 p-4 sm:p-6 lg:p-8">
+      {/* CUSTOM CURSOR ON CART */}
+      {hoverCart && (
+        <div
+          style={{
+            position: "fixed",
+            top: cursorPos.y,
+            left: cursorPos.x,
+            width: 20,
+            height: 20,
+            backgroundColor: "rgba(99, 102, 241, 0.8)",
+            borderRadius: "50%",
+            pointerEvents: "none",
+            transform: "translate(-50%, -50%)",
+            transition: "transform 0.1s ease",
+            zIndex: 9999,
+          }}
+        ></div>
+      )}
+
       {/* BLUR WHEN MODAL OPEN */}
       <div
         className={`transition-all duration-300 ${
@@ -91,7 +124,6 @@ const ProductList = () => {
         {/* FILTERS */}
         <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8 hover:shadow-xl transition-shadow duration-300">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* SEARCH */}
             <div className="flex flex-col">
               <label className="text-sm font-semibold text-gray-700 mb-1">Search</label>
               <input
@@ -106,7 +138,6 @@ const ProductList = () => {
               />
             </div>
 
-            {/* CATEGORY */}
             <div className="flex flex-col">
               <label className="text-sm font-semibold text-gray-700 mb-1">Category</label>
               <CategoryFilter
@@ -119,7 +150,6 @@ const ProductList = () => {
               />
             </div>
 
-            {/* SUBCATEGORY */}
             <div className="flex flex-col">
               <label className="text-sm font-semibold text-gray-700 mb-1">Sub Category</label>
               <SubCategoryFilter
@@ -139,30 +169,28 @@ const ProductList = () => {
           </p>
         </div>
 
-        {/* PRODUCT CARD GRID */}
+        {/* PRODUCT GRID */}
         {loading ? (
           <div className="text-center text-gray-500 py-8">Loading...</div>
         ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product, index) => (
+            {products.map((product) => (
               <div
                 key={product._id}
-                className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+                onMouseEnter={() => setHoverCart(true)}
+                onMouseLeave={() => setHoverCart(false)}
+                className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
               >
-                {/* IMAGE */}
-                <div className="relative h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                <div className="relative h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden group">
                   <img
                     src={product.image || "/placeholder.png"}
                     alt={product.name}
-                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                    className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
 
-                {/* DETAILS */}
                 <div className="p-4 flex flex-col flex-grow">
-                  <h2 className="text-lg font-bold text-gray-800 mb-1">
-                    {product.name}
-                  </h2>
+                  <h2 className="text-lg font-bold text-gray-800 mb-1">{product.name}</h2>
                   <p className="text-gray-500 text-sm mb-2 line-clamp-2">
                     {product.description || "No description"}
                   </p>
@@ -177,9 +205,7 @@ const ProductList = () => {
                   </div>
 
                   <div className="mt-auto flex justify-between items-center">
-                    <span className="text-lg font-bold text-indigo-600">
-                      ₹ {product.price}
-                    </span>
+                    <span className="text-lg font-bold text-indigo-600">₹ {product.price}</span>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setSelectedProduct(product)}
@@ -200,9 +226,7 @@ const ProductList = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center text-gray-500 italic py-8">
-            No products found
-          </div>
+          <div className="text-center text-gray-500 italic py-8">No products found</div>
         )}
 
         {/* PAGINATION */}
@@ -241,9 +265,7 @@ const ProductList = () => {
       {isInsert && <Insert onClose={handleCloseInsert} />}
 
       {/* EDIT MODAL */}
-      {selectedProduct && (
-        <UpdateProduct data={selectedProduct} onClose={handleCloseUpdate} />
-      )}
+      {selectedProduct && <UpdateProduct data={selectedProduct} onClose={handleCloseUpdate} />}
     </div>
   );
 };
