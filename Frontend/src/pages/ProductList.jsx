@@ -156,9 +156,6 @@ const ProductList = () => {
                     alt={product.name}
                     className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                   />
-                  <span className="absolute top-2 left-2 bg-indigo-600 text-white text-xs font-semibold px-2 py-1 rounded">
-                    #{(page - 1) * limit + index + 1}
-                  </span>
                 </div>
 
                 {/* DETAILS */}
