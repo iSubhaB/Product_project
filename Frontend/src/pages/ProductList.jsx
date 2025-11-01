@@ -58,12 +58,12 @@ const ProductList = () => {
   const handleCloseInsert = () => setIsInsert(false);
   const handleCloseUpdate = () => {
     setSelectedProduct(null);
-    fetchProducts(); // Refresh list after update
+    fetchProducts(); // Refresh after update
   };
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-white to-gray-100 p-4 sm:p-6 lg:p-8">
-      {/* BACKGROUND CONTENT */}
+      {/* BLUR WHEN MODAL OPEN */}
       <div
         className={`transition-all duration-300 ${
           isInsert || selectedProduct ? "blur-sm pointer-events-none select-none" : ""
@@ -72,30 +72,28 @@ const ProductList = () => {
         {/* HEADER */}
         <div className="mb-6 sm:mb-8 bg-white/60 backdrop-blur-md shadow-lg border border-gray-200 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-800 tracking-tight mb-1 flex items-center gap-2">
-              🛒 Product Inventory
+            <h1 className="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
+              🛍️ Product Inventory
             </h1>
-            <p className="text-gray-500 text-base sm:text-lg">
-              Manage and explore all products with smart filters and search.
+            <p className="text-gray-500 text-base">
+              Manage and explore all products with filters and search.
             </p>
           </div>
 
           <button
             onClick={() => setIsInsert(true)}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg transition-all duration-200 text-center"
+            className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md transition-all"
           >
             ➕ Add Product
           </button>
         </div>
 
-        {/* FILTER SECTION */}
+        {/* FILTERS */}
         <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8 hover:shadow-xl transition-shadow duration-300">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* SEARCH */}
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">
-                Search
-              </label>
+              <label className="text-sm font-semibold text-gray-700 mb-1">Search</label>
               <input
                 type="text"
                 placeholder="Type product name..."
@@ -110,9 +108,7 @@ const ProductList = () => {
 
             {/* CATEGORY */}
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">
-                Category
-              </label>
+              <label className="text-sm font-semibold text-gray-700 mb-1">Category</label>
               <CategoryFilter
                 selected={categoryId}
                 onSelect={(id) => {
@@ -125,9 +121,7 @@ const ProductList = () => {
 
             {/* SUBCATEGORY */}
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">
-                Sub Category
-              </label>
+              <label className="text-sm font-semibold text-gray-700 mb-1">Sub Category</label>
               <SubCategoryFilter
                 categoryId={categoryId}
                 selected={subCategoryId}
@@ -140,83 +134,89 @@ const ProductList = () => {
           </div>
 
           <p className="text-sm text-gray-700 mt-4 font-medium">
-            Showing <span className="font-semibold">{products.length}</span> items
-            of <span className="font-semibold">{totalCount}</span>
+            Showing <span className="font-semibold">{products.length}</span> items of{" "}
+            <span className="font-semibold">{totalCount}</span>
           </p>
         </div>
 
-        {/* PRODUCT TABLE (RESPONSIVE WRAP) */}
-        <div className="bg-white rounded-2xl overflow-x-auto border border-gray-100 shadow-lg hover:shadow-2xl transition-shadow duration-300">
-          <table className="w-full min-w-[800px] text-left border-collapse">
-            <thead className="bg-indigo-600 text-white uppercase text-sm">
-              <tr>
-                <th className="p-3 border">#</th>
-                <th className="p-3 border">Product Name</th>
-                <th className="p-3 border">Description</th>
-                <th className="p-3 border">Category</th>
-                <th className="p-3 border">Sub Category</th>
-                <th className="p-3 border">Price</th>
-                <th className="p-3 border text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="text-center p-4">
-                    Loading...
-                  </td>
-                </tr>
-              ) : products.length > 0 ? (
-                products.map((row, index) => (
-                  <tr
-                    key={row._id}
-                    className="hover:bg-indigo-50 transition-all duration-200"
-                  >
-                    <td className="p-3 border">{(page - 1) * limit + index + 1}</td>
-                    <td className="p-3 border">{row.name}</td>
-                    <td className="p-3 border">{row.description || "-"}</td>
-                    <td className="p-3 border">{row.category?.name || "-"}</td>
-                    <td className="p-3 border">{row.subCategory?.name || "-"}</td>
-                    <td className="p-3 border">₹ {row.price}</td>
-                    <td className="p-3 border text-center flex justify-center gap-2">
+        {/* PRODUCT CARD GRID */}
+        {loading ? (
+          <div className="text-center text-gray-500 py-8">Loading...</div>
+        ) : products.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((product, index) => (
+              <div
+                key={product._id}
+                className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+              >
+                {/* IMAGE */}
+                <div className="relative h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={product.image || "/placeholder.png"}
+                    alt={product.name}
+                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                  />
+                  <span className="absolute top-2 left-2 bg-indigo-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                    #{(page - 1) * limit + index + 1}
+                  </span>
+                </div>
+
+                {/* DETAILS */}
+                <div className="p-4 flex flex-col flex-grow">
+                  <h2 className="text-lg font-bold text-gray-800 mb-1">
+                    {product.name}
+                  </h2>
+                  <p className="text-gray-500 text-sm mb-2 line-clamp-2">
+                    {product.description || "No description"}
+                  </p>
+
+                  <div className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold">Category:</span>{" "}
+                    {product.category?.name || "-"}
+                  </div>
+                  <div className="text-sm text-gray-600 mb-3">
+                    <span className="font-semibold">Subcategory:</span>{" "}
+                    {product.subCategory?.name || "-"}
+                  </div>
+
+                  <div className="mt-auto flex justify-between items-center">
+                    <span className="text-lg font-bold text-indigo-600">
+                      ₹ {product.price}
+                    </span>
+                    <div className="flex gap-2">
                       <button
-                        onClick={() => handleDelete(row._id)}
-                        className="bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 text-sm py-1 px-2 rounded transition-all duration-200"
-                      >
-                        🗑️
-                      </button>
-                      <button
-                        onClick={() => setSelectedProduct(row)}
-                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 text-sm py-1 px-2 rounded transition-all duration-200"
+                        onClick={() => setSelectedProduct(product)}
+                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm py-1 px-2 rounded transition-all"
                       >
                         ✏️
                       </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="text-center p-4 text-gray-500 italic"
-                  >
-                    No products found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <button
+                        onClick={() => handleDelete(product._id)}
+                        className="bg-red-100 text-red-700 hover:bg-red-200 text-sm py-1 px-2 rounded transition-all"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-gray-500 italic py-8">
+            No products found
+          </div>
+        )}
 
         {/* PAGINATION */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-6 text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
           <button
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
-            className={`px-4 py-2 rounded-lg font-medium border transition-all duration-200 ${
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
               page === 1
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg"
+                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
             }`}
           >
             Previous
@@ -229,10 +229,10 @@ const ProductList = () => {
           <button
             disabled={page === totalPages}
             onClick={() => setPage(page + 1)}
-            className={`px-4 py-2 rounded-lg font-medium border transition-all duration-200 ${
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
               page === totalPages
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg"
+                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
             }`}
           >
             Next
