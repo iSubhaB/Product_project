@@ -83,7 +83,7 @@ const ProductList = () => {
               onClick={() => setIsInsert(true)}
               className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg transition-all duration-200"
             >
-             ➕ Insert Product
+             ➕ Add Product
             </button>
           </div>
         </div>
