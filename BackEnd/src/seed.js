@@ -4,7 +4,7 @@ import Category from "./models/Category.js";
 import SubCategory from "./models/SubCategory.js";
 import Product from "./models/Product.js";
 import connectDB from "./config/db.js";
-import uploads from "../uploads"
+
 
 dotenv.config();
 
