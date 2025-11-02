@@ -1,21 +1,22 @@
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
-import SubCategory from "../models/SubCategory.js"; //  FIXED: Correct import name
+import SubCategory from "../models/SubCategory.js";
 import mongoose from "mongoose";
 import fs from "fs";
 
+// ==================== CREATE PRODUCT ====================
 export const createProduct = async (req, res) => {
   try {
     const { name, description, price, categoryName, subCategoryName } = req.body;
     const imagePaths = req.files ? req.files.map((f) => f.filename) : [];
 
-    // Check if category already exists, if not — create it
+    // Check or create category
     let category = await Category.findOne({ name: categoryName });
     if (!category) {
       category = await Category.create({ name: categoryName });
     }
 
-    // Check if subcategory exists (under this category), if not — create it
+    // Check or create subcategory (under category)
     let subCategory = await SubCategory.findOne({
       name: subCategoryName,
       category: category._id,
@@ -28,7 +29,7 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    //  Create the Product and link Category + SubCategory
+    // Create the Product
     const product = await Product.create({
       name,
       description,
@@ -52,8 +53,9 @@ export const createProduct = async (req, res) => {
   }
 };
 
-
+// ==================== GET PRODUCTS ====================
 export const getProducts = async (req, res) => {
+  try {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.max(1, Number(req.query.limit) || 50);
     const skip = (page - 1) * limit;
@@ -62,127 +64,167 @@ export const getProducts = async (req, res) => {
     const subCategoryId = req.query.subCategoryId || null;
 
     const searchRegex = search
-        ? new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-        : null;  //ensures special characters don’t break the regex.
+      ? new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+      : null;
 
     const andConditions = [];
 
     if (searchRegex) {
-        andConditions.push({
-            $or: [{ name: { $regex: searchRegex } }, { description: { $regex: searchRegex } }],
-        });
+      andConditions.push({
+        $or: [
+          { name: { $regex: searchRegex } },
+          { description: { $regex: searchRegex } },
+        ],
+      });
     }
 
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
-        andConditions.push({ category: new mongoose.Types.ObjectId(categoryId) });
+      andConditions.push({ category: new mongoose.Types.ObjectId(categoryId) });
     }
 
     if (subCategoryId && mongoose.Types.ObjectId.isValid(subCategoryId)) {
-        andConditions.push({ subCategory: new mongoose.Types.ObjectId(subCategoryId) });
+      andConditions.push({
+        subCategory: new mongoose.Types.ObjectId(subCategoryId),
+      });
     }
 
-    const matchStage = andConditions.length > 0 ? { $match: { $and: andConditions } } : {};
-   // push the all input data to matchStage by checking the andCondition emty or not
-   //  If there are filters → Add $match to pipeline
-   // If there are no filters → Skip $match completely
+    const matchStage =
+      andConditions.length > 0 ? { $match: { $and: andConditions } } : {};
 
     const pipeline = [];
-
     if (Object.keys(matchStage).length > 0) pipeline.push(matchStage);
-   // we got the data and push to pipeline for 
 
     pipeline.push(
-        {
-            $lookup: {
-                from: "categories",
-                localField: "category",
-                foreignField: "_id",
-                as: "category",
-            },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
         },
-        { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },// this is to convert the category array into a single object.  //If product has no category, do not remove the product.
-        {
-            $lookup: {
-                from: "subcategories",
-                localField: "subCategory",
-                foreignField: "_id",
-                as: "subCategory",
-            },
+      },
+      {
+        $unwind: { path: "$category", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: "subcategories",
+          localField: "subCategory",
+          foreignField: "_id",
+          as: "subCategory",
         },
-        { $unwind: { path: "$subCategory", preserveNullAndEmptyArrays: true } },
-        {
-            $facet: {
-                metadata: [{ $count: "total" }],
-                data: [
-                    { $sort: { _id: -1 } },
-                    { $skip: skip },
-                    { $limit: limit },
-                    {
-                        $project: {
-                            name: 1,
-                            description: 1,
-                            price: 1,
-                            rating: 1,
-                            stock: 1,
-                            images: 1,
-                            "category._id": 1,
-                            "category.name": 1,
-                            "subCategory._id": 1,
-                            "subCategory.name": 1,
-                        },
-                    },
-                ],
+      },
+      {
+        $unwind: { path: "$subCategory", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $sort: { _id: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                name: 1,
+                description: 1,
+                price: 1,
+                images: 1,
+                "category._id": 1,
+                "category.name": 1,
+                "subCategory._id": 1,
+                "subCategory.name": 1,
+              },
             },
-        }
+          ],
+        },
+      }
     );
 
     const result = await Product.aggregate(pipeline);
     const metadata = result[0]?.metadata[0] || { total: 0 };
-    const products = result[0]?.data || [];  
-    //result[0]?.data==Give the first (and only) object returned by the aggregation.
+    let products = result[0]?.data || [];
+
+    //  Add full image URLs dynamically
+    const baseUrl = `${req.protocol}://${req.get("host")}/uploads/`;
+    products = products.map((p) => ({
+      ...p,
+      images: p.images.map((img) => `${baseUrl}${img}`),
+    }));
 
     res.status(200).json({
-        success: true,
-        totalCount: metadata.total,
-        totalPages: Math.ceil(metadata.total / limit) || 1,
-        currentPage: page,
-        data: products,
+      success: true,
+      totalCount: metadata.total,
+      totalPages: Math.ceil(metadata.total / limit) || 1,
+      currentPage: page,
+      data: products,
     });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to fetch products",
+      error: error.message,
+    });
+  }
 };
 
-//metadata.total=how many products match filters/search in total, not just this page.
-
-
+// ==================== UPDATE PRODUCT ====================
 export const updateProduct = async (req, res) => {
+  try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
 
+    // Replace images if new ones uploaded
     if (req.files && req.files.length > 0) {
-        // Delete old images from uploads folder
-        product.images.forEach((img) => {
-            const filePath = `uploads/${img}`;
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        });
-        product.images = req.files.map((f) => f.filename);
+      // Delete old images
+      product.images.forEach((img) => {
+        const filePath = `uploads/${img}`;
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      });
+      product.images = req.files.map((f) => f.filename);
     }
 
     Object.assign(product, req.body);
     await product.save();
 
+    const baseUrl = `${req.protocol}://${req.get("host")}/uploads/`;
+    product.images = product.images.map((img) => `${baseUrl}${img}`);
+
     res.status(200).json({ success: true, data: product });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to update product",
+      error: error.message,
+    });
+  }
 };
 
-// Delete product and local images
+// ==================== DELETE PRODUCT ====================
 export const deleteProduct = async (req, res) => {
+  try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
 
+    // Delete local images
     product.images.forEach((img) => {
-        const filePath = `uploads/${img}`;
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      const filePath = `uploads/${img}`;
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     });
 
     await product.deleteOne();
 
     res.status(200).json({ success: true, message: "Product deleted" });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to delete product",
+      error: error.message,
+    });
+  }
 };

@@ -6,6 +6,83 @@ import SubCategoryFilter from "../components/SubCategoryFilter";
 import UpdateProduct from "../components/Edit File/UpdateProduct";
 import Insert from "../components/Edit File/Insert";
 
+
+const ImageCarousel = ({ images, name }) => {
+  const [index, setIndex] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  // Auto slide every 4s, pause when hovered
+  useEffect(() => {
+    if (!images?.length || hover) return;
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [images, hover]);
+
+  if (!images?.length) {
+    return (
+      <img
+        src="/placeholder.png"
+        alt="No image"
+        className="object-cover w-full h-full"
+      />
+    );
+  }
+
+  return (
+    <div
+      className="relative w-full h-full overflow-hidden group"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <img
+        src={images[index]}
+        alt={name}
+        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+      />
+
+      {/* Prev / Next */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIndex((i) => (i - 1 + images.length) % images.length);
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-700 rounded-full px-2 shadow"
+          >
+            ‹
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIndex((i) => (i + 1) % images.length);
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-700 rounded-full px-2 shadow"
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      {/* Dots */}
+      {images.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          {images.map((_, i) => (
+            <div
+              key={i}
+              className={`h-2 w-2 rounded-full ${
+                i === index ? "bg-indigo-600 w-4" : "bg-gray-300"
+              } transition-all`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -18,12 +95,12 @@ const ProductList = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isInsert, setIsInsert] = useState(false);
-
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [hoverCart, setHoverCart] = useState(false);
 
   const debouncedSearch = useDebounce(search, 500);
 
+  // Fetch products
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -47,17 +124,6 @@ const ProductList = () => {
     fetchProducts();
   }, [debouncedSearch, page, limit, categoryId, subCategoryId]);
 
-  // Track cursor position
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (hoverCart) {
-        setCursorPos({ x: e.clientX, y: e.clientY });
-      }
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [hoverCart]);
-
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
@@ -72,199 +138,163 @@ const ProductList = () => {
   const handleCloseInsert = () => setIsInsert(false);
   const handleCloseUpdate = () => {
     setSelectedProduct(null);
-    fetchProducts(); // Refresh after update
+    fetchProducts();
   };
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-white to-gray-100 p-4 sm:p-6 lg:p-8">
-      {/* CUSTOM CURSOR ON CART */}
-      {hoverCart && (
-        <div
-          style={{
-            position: "fixed",
-            top: cursorPos.y,
-            left: cursorPos.x,
-            width: 20,
-            height: 20,
-            backgroundColor: "rgba(99, 102, 241, 0.8)",
-            borderRadius: "50%",
-            pointerEvents: "none",
-            transform: "translate(-50%, -50%)",
-            transition: "transform 0.1s ease",
-            zIndex: 9999,
-          }}
-        ></div>
-      )}
-
-      {/* BLUR WHEN MODAL OPEN */}
-      <div
-        className={`transition-all duration-300 ${
-          isInsert || selectedProduct ? "blur-sm pointer-events-none select-none" : ""
-        }`}
-      >
-        {/* HEADER */}
-        <div className="mb-6 sm:mb-8 bg-white/60 backdrop-blur-md shadow-lg border border-gray-200 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
-              🛍️ Product Inventory
-            </h1>
-            <p className="text-gray-500 text-base">
-              Manage and explore all products with filters and search.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setIsInsert(true)}
-            className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md transition-all"
-          >
-            ➕ Add Product
-          </button>
-        </div>
-
-        {/* FILTERS */}
-        <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8 hover:shadow-xl transition-shadow duration-300">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Search</label>
-              <input
-                type="text"
-                placeholder="Type product name..."
-                value={search}
-                onChange={(e) => {
-                  setPage(1);
-                  setSearch(e.target.value);
-                }}
-                className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 outline-none transition-all duration-300 bg-white shadow-sm"
-              />
-            </div>
-
-            <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Category</label>
-              <CategoryFilter
-                selected={categoryId}
-                onSelect={(id) => {
-                  setPage(1);
-                  setCategoryId(id);
-                  setSubCategoryId("");
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Sub Category</label>
-              <SubCategoryFilter
-                categoryId={categoryId}
-                selected={subCategoryId}
-                onSelect={(id) => {
-                  setPage(1);
-                  setSubCategoryId(id);
-                }}
-              />
-            </div>
-          </div>
-
-          <p className="text-sm text-gray-700 mt-4 font-medium">
-            Showing <span className="font-semibold">{products.length}</span> items of{" "}
-            <span className="font-semibold">{totalCount}</span>
+      {/* HEADER */}
+      <div className="mb-6 sm:mb-8 bg-white/60 backdrop-blur-md shadow-lg border border-gray-200 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-800 flex items-center gap-2">
+            🛍️ Product Inventory
+          </h1>
+          <p className="text-gray-500 text-base">
+            Manage and explore all products with filters and search.
           </p>
         </div>
+        <button
+          onClick={() => setIsInsert(true)}
+          className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md transition-all"
+        >
+          ➕ Add Product
+        </button>
+      </div>
 
-        {/* PRODUCT GRID */}
-        {loading ? (
-          <div className="text-center text-gray-500 py-8">Loading...</div>
-        ) : products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                onMouseEnter={() => setHoverCart(true)}
-                onMouseLeave={() => setHoverCart(false)}
-                className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
-              >
-                <div className="relative h-48 w-full bg-gray-100 flex items-center justify-center overflow-hidden group">
-                  <img
-                    src={product.image || "/placeholder.png"}
-                    alt={product.name}
-                    className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-                  />
+      {/* FILTERS */}
+      <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8 hover:shadow-xl transition-shadow duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">Search</label>
+            <input
+              type="text"
+              placeholder="Type product name..."
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+              className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 outline-none transition-all duration-300 bg-white shadow-sm"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">Category</label>
+            <CategoryFilter
+              selected={categoryId}
+              onSelect={(id) => {
+                setPage(1);
+                setCategoryId(id);
+                setSubCategoryId("");
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">Sub Category</label>
+            <SubCategoryFilter
+              categoryId={categoryId}
+              selected={subCategoryId}
+              onSelect={(id) => {
+                setPage(1);
+                setSubCategoryId(id);
+              }}
+            />
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-700 mt-4 font-medium">
+          Showing <span className="font-semibold">{products.length}</span> items of{" "}
+          <span className="font-semibold">{totalCount}</span>
+        </p>
+      </div>
+
+      {/* PRODUCT GRID */}
+      {loading ? (
+        <div className="text-center text-gray-500 py-8">Loading...</div>
+      ) : products.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <div
+              key={product._id}
+              className="bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
+            >
+              <div className="relative h-48 w-full bg-gray-100">
+                <ImageCarousel images={product.images} name={product.name} />
+              </div>
+
+              <div className="p-4 flex flex-col flex-grow">
+                <h2 className="text-lg font-bold text-gray-800 mb-1">{product.name}</h2>
+                <p className="text-gray-500 text-sm mb-2 line-clamp-2">
+                  {product.description || "No description"}
+                </p>
+
+                <div className="text-sm text-gray-600 mb-1">
+                  <span className="font-semibold">Category:</span>{" "}
+                  {product.category?.name || "-"}
+                </div>
+                <div className="text-sm text-gray-600 mb-3">
+                  <span className="font-semibold">Subcategory:</span>{" "}
+                  {product.subCategory?.name || "-"}
                 </div>
 
-                <div className="p-4 flex flex-col flex-grow">
-                  <h2 className="text-lg font-bold text-gray-800 mb-1">{product.name}</h2>
-                  <p className="text-gray-500 text-sm mb-2 line-clamp-2">
-                    {product.description || "No description"}
-                  </p>
-
-                  <div className="text-sm text-gray-600 mb-1">
-                    <span className="font-semibold">Category:</span>{" "}
-                    {product.category?.name || "-"}
-                  </div>
-                  <div className="text-sm text-gray-600 mb-3">
-                    <span className="font-semibold">Subcategory:</span>{" "}
-                    {product.subCategory?.name || "-"}
-                  </div>
-
-                  <div className="mt-auto flex justify-between items-center">
-                    <span className="text-lg font-bold text-indigo-600">₹ {product.price}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setSelectedProduct(product)}
-                        className="bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm py-1 px-2 rounded transition-all"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product._id)}
-                        className="bg-red-100 text-red-700 hover:bg-red-200 text-sm py-1 px-2 rounded transition-all"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                <div className="mt-auto flex justify-between items-center">
+                  <span className="text-lg font-bold text-indigo-600">₹ {product.price}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedProduct(product)}
+                      className="bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm py-1 px-2 rounded transition-all"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product._id)}
+                      className="bg-red-100 text-red-700 hover:bg-red-200 text-sm py-1 px-2 rounded transition-all"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-gray-500 italic py-8">No products found</div>
-        )}
-
-        {/* PAGINATION */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              page === 1
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
-            }`}
-          >
-            Previous
-          </button>
-
-          <span className="text-gray-700 font-medium">
-            Page {page} of {totalPages}
-          </span>
-
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              page === totalPages
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
-            }`}
-          >
-            Next
-          </button>
+            </div>
+          ))}
         </div>
+      ) : (
+        <div className="text-center text-gray-500 italic py-8">No products found</div>
+      )}
+
+      {/* PAGINATION */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            page === 1
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
+          }`}
+        >
+          Previous
+        </button>
+
+        <span className="text-gray-700 font-medium">
+          Page {page} of {totalPages}
+        </span>
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            page === totalPages
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md"
+          }`}
+        >
+          Next
+        </button>
       </div>
 
-      {/* INSERT MODAL */}
       {isInsert && <Insert onClose={handleCloseInsert} />}
-
-      {/* EDIT MODAL */}
       {selectedProduct && <UpdateProduct data={selectedProduct} onClose={handleCloseUpdate} />}
     </div>
   );
