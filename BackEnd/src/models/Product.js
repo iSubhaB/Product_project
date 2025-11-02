@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema({
     images: [String],
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory" },
+     is_deleted:{type:Boolean,default:false}
 });
 productSchema.index({ name: "text", description: "text" });
 

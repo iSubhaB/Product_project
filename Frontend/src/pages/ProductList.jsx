@@ -5,83 +5,8 @@ import CategoryFilter from "../components/CategoryFilter";
 import SubCategoryFilter from "../components/SubCategoryFilter";
 import UpdateProduct from "../components/Edit File/UpdateProduct";
 import Insert from "../components/Edit File/Insert";
-
-
-const ImageCarousel = ({ images, name }) => {
-  const [index, setIndex] = useState(0);
-  const [hover, setHover] = useState(false);
-
-  // Auto slide every 4s, pause when hovered
-  useEffect(() => {
-    if (!images?.length || hover) return;
-    const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [images, hover]);
-
-  if (!images?.length) {
-    return (
-      <img
-        src="/placeholder.png"
-        alt="No image"
-        className="object-cover w-full h-full"
-      />
-    );
-  }
-
-  return (
-    <div
-      className="relative w-full h-full overflow-hidden group"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      <img
-        src={images[index]}
-        alt={name}
-        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-      />
-
-      {/* Prev / Next */}
-      {images.length > 1 && (
-        <>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIndex((i) => (i - 1 + images.length) % images.length);
-            }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-700 rounded-full px-2 shadow"
-          >
-            ‹
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIndex((i) => (i + 1) % images.length);
-            }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-700 rounded-full px-2 shadow"
-          >
-            ›
-          </button>
-        </>
-      )}
-
-      {/* Dots */}
-      {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {images.map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 w-2 rounded-full ${
-                i === index ? "bg-indigo-600 w-4" : "bg-gray-300"
-              } transition-all`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import ConfirmDialog from "../components/ConfirmDialog";
+import ImageCarousel from "../components/ImageCarousel"; 
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -95,12 +20,12 @@ const ProductList = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isInsert, setIsInsert] = useState(false);
-  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
-  const [hoverCart, setHoverCart] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search, 500);
 
-  // Fetch products
+  // Fetch all products
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -124,13 +49,21 @@ const ProductList = () => {
     fetchProducts();
   }, [debouncedSearch, page, limit, categoryId, subCategoryId]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+  const confirmDelete = (id) => {
+    setDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`/products/${id}`);
+      await api.delete(`/products/${deleteId}`);
+      setConfirmOpen(false);
+      setDeleteId(null);
       fetchProducts();
     } catch (error) {
       console.error(error);
+      setConfirmOpen(false);
       alert("Failed to delete product");
     }
   };
@@ -165,7 +98,9 @@ const ProductList = () => {
       <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8 hover:shadow-xl transition-shadow duration-300">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Search</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Search
+            </label>
             <input
               type="text"
               placeholder="Type product name..."
@@ -179,7 +114,9 @@ const ProductList = () => {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Category</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Category
+            </label>
             <CategoryFilter
               selected={categoryId}
               onSelect={(id) => {
@@ -191,7 +128,9 @@ const ProductList = () => {
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Sub Category</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Sub Category
+            </label>
             <SubCategoryFilter
               categoryId={categoryId}
               selected={subCategoryId}
@@ -204,8 +143,8 @@ const ProductList = () => {
         </div>
 
         <p className="text-sm text-gray-700 mt-4 font-medium">
-          Showing <span className="font-semibold">{products.length}</span> items of{" "}
-          <span className="font-semibold">{totalCount}</span>
+          Showing <span className="font-semibold">{products.length}</span> items
+          of <span className="font-semibold">{totalCount}</span>
         </p>
       </div>
 
@@ -224,7 +163,9 @@ const ProductList = () => {
               </div>
 
               <div className="p-4 flex flex-col flex-grow">
-                <h2 className="text-lg font-bold text-gray-800 mb-1">{product.name}</h2>
+                <h2 className="text-lg font-bold text-gray-800 mb-1">
+                  {product.name}
+                </h2>
                 <p className="text-gray-500 text-sm mb-2 line-clamp-2">
                   {product.description || "No description"}
                 </p>
@@ -239,7 +180,9 @@ const ProductList = () => {
                 </div>
 
                 <div className="mt-auto flex justify-between items-center">
-                  <span className="text-lg font-bold text-indigo-600">₹ {product.price}</span>
+                  <span className="text-lg font-bold text-indigo-600">
+                    ₹ {product.price}
+                  </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedProduct(product)}
@@ -248,7 +191,7 @@ const ProductList = () => {
                       ✏️
                     </button>
                     <button
-                      onClick={() => handleDelete(product._id)}
+                      onClick={() => confirmDelete(product._id)}
                       className="bg-red-100 text-red-700 hover:bg-red-200 text-sm py-1 px-2 rounded transition-all"
                     >
                       🗑️
@@ -260,7 +203,9 @@ const ProductList = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center text-gray-500 italic py-8">No products found</div>
+        <div className="text-center text-gray-500 italic py-8">
+          No products found
+        </div>
       )}
 
       {/* PAGINATION */}
@@ -295,7 +240,21 @@ const ProductList = () => {
       </div>
 
       {isInsert && <Insert onClose={handleCloseInsert} />}
-      {selectedProduct && <UpdateProduct data={selectedProduct} onClose={handleCloseUpdate} />}
+      {selectedProduct && (
+        <UpdateProduct data={selectedProduct} onClose={handleCloseUpdate} />
+      )}
+
+      {/* DELETE CONFIRMATION */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setDeleteId(null);
+        }}
+      />
     </div>
   );
 };

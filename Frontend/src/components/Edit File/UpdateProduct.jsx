@@ -9,6 +9,7 @@ const UpdateProduct = ({ data, onClose }) => {
     categoryId: data.category?._id || "",
     subCategoryId: data.subCategory?._id || "",
   });
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,11 +25,11 @@ const UpdateProduct = ({ data, onClose }) => {
 
     try {
       await api.put(`/products/${data._id}`, formData);
-      alert(" Product updated successfully!");
+      alert("✅ Product updated successfully!");
       if (onClose) onClose();
     } catch (err) {
       console.error(err);
-      setError(" Failed to update product.");
+      setError("❌ Failed to update product.");
     } finally {
       setSaving(false);
     }
@@ -52,6 +53,7 @@ const UpdateProduct = ({ data, onClose }) => {
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <p className="text-red-600 text-sm">{error}</p>}
 
+          {/* Product Name */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Product Name
@@ -66,6 +68,7 @@ const UpdateProduct = ({ data, onClose }) => {
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Description
@@ -79,8 +82,11 @@ const UpdateProduct = ({ data, onClose }) => {
             />
           </div>
 
+          {/* Price */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Price</label>
+            <label className="block text-gray-700 font-medium mb-1">
+              Price
+            </label>
             <input
               type="number"
               name="price"
@@ -91,34 +97,37 @@ const UpdateProduct = ({ data, onClose }) => {
             />
           </div>
 
-          {formData.categoryId && (
+          {/* Category Name */}
+          {data.category?.name && (
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Category ID
+                Category
               </label>
               <input
                 type="text"
-                value={formData.categoryId}
+                value={data.category.name}
                 readOnly
                 className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-600"
               />
             </div>
           )}
 
-          {formData.subCategoryId && (
+          {/* Subcategory Name */}
+          {data.subCategory?.name && (
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Sub Category ID
+                Subcategory
               </label>
               <input
                 type="text"
-                value={formData.subCategoryId}
+                value={data.subCategory.name}
                 readOnly
                 className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-600"
               />
             </div>
           )}
 
+          {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
